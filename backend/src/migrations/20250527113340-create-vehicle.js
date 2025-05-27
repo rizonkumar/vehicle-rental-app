@@ -21,10 +21,7 @@ module.exports = {
           key: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL",
-      },
-      createdAt: {
-        onDelete: "SET NULL",
+        onDelete: "RESTRICT",
       },
       createdAt: {
         allowNull: false,
