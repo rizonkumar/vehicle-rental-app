@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     const [vehicleTypes] = await queryInterface.sequelize.query(
-      `SELECT id, name FROM "VehicleTypes";`
+      `SELECT id, name FROM \`VehicleTypes\`;`
     );
 
     const typeMap = vehicleTypes.reduce((acc, type) => {
