@@ -1,0 +1,213 @@
+# Vehicle Rental API - Backend
+
+This backend service manages vehicle data, types, and bookings for the Vehicle Rental application. It's built with Node.js, Express, Sequelize (ORM), and MySQL.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18.x or later recommended)
+- **npm** (usually comes with Node.js)
+- **MySQL Server** (v8.x or later recommended)
+- A MySQL client (like MySQL Workbench, DBeaver, or the command-line client)
+
+## Getting Started
+
+Follow these steps to get the backend server up and running on your local machine.
+
+### 1. Clone the Repository
+
+If the project is in a Git repository, clone it:
+
+```bash
+git clone [https://github.com/rizonkumar/vehicle-rental-app.git](https://github.com/rizonkumar/vehicle-rental-app.git)
+cd vehicle-rental-app/backend
+```
+
+If you just have the `backend` folder, navigate into it:
+
+```bash
+cd path/to/your/vehicle-rental-app/backend
+```
+
+### 2. Install Dependencies
+
+Install the necessary Node.js packages:
+
+```bash
+npm install
+```
+
+This will install Express, Sequelize, MySQL2, dotenv, cors, date-fns, and development dependencies like nodemon and sequelize-cli.
+
+### 3. Environment Variables
+
+The application uses environment variables for configuration, especially for database credentials and server port.
+
+1.  Create a `.env` file in the `backend` directory:
+    ```bash
+    touch .env
+    ```
+2.  Open the `.env` file and add the following configuration, replacing placeholders with your actual values:
+
+    ```env
+    # Server Configuration
+    PORT=5002
+    NODE_ENV=development
+
+    # Database Credentials
+    DB_HOST=localhost
+    DB_USER=your_mysql_user         # Replace with your MySQL username
+    DB_PASS=your_mysql_password     # Replace with your MySQL password
+    DB_NAME=vehicle_rental_db       # The name of the database you will create
+    DB_DIALECT=mysql
+    ```
+
+    - **Important:** `NODE_ENV` should be set to `development` for local development. The `src/config/config.js` file uses this to select the correct database credentials.
+
+### 4. Database Setup (MySQL)
+
+You need to create the database and a dedicated user in MySQL.
+
+1.  **Log in to your MySQL server** as a root user or another user with privileges to create databases and users:
+    ```bash
+    mysql -u root -p
+    ```
+2.  **Create the database** (e.g., `vehicle_rental_db`, matching `DB_NAME` in your `.env`):
+    ```sql
+    CREATE DATABASE IF NOT EXISTS vehicle_rental_db;
+    ```
+3.  **Create a database user** (e.g., `vehicle_user` with password `vehicle_pass123`, matching `DB_USER` and `DB_PASS` in your `.env`):
+    ```sql
+    CREATE USER IF NOT EXISTS 'your_mysql_user'@'localhost' IDENTIFIED BY 'your_mysql_password';
+    ```
+4.  **Grant privileges** to the new user for the database:
+    ```sql
+    GRANT ALL PRIVILEGES ON vehicle_rental_db.* TO 'your_mysql_user'@'localhost';
+    ```
+5.  **Apply the changes:**
+    ```sql
+    FLUSH PRIVILEGES;
+    EXIT;
+    ```
+
+### 5. Sequelize Configuration
+
+The project uses Sequelize CLI for migrations and seeding. The configuration for these CLI operations is primarily managed by:
+
+- **`backend/.sequelizerc`**: This file tells Sequelize CLI where to find your configuration, models, migrations, and seeders (all within the `src` directory). It should look like this:
+
+  ```javascript
+  // backend/.sequelizerc
+  const path = require("path");
+
+  module.exports = {
+    config: path.resolve("src", "config", "config.js"),
+    "models-path": path.resolve("src", "models"),
+    "seeders-path": path.resolve("src", "seeders"),
+    "migrations-path": path.resolve("src", "migrations"),
+  };
+  ```
+
+- **`backend/src/config/config.js`**: This file loads your `.env` variables and provides them to Sequelize CLI for database connections. It should look like this:
+
+  ```javascript
+  // backend/src/config/config.js
+  require("dotenv").config(); // Loads .env from the backend directory
+
+  module.exports = {
+    development: {
+      username: process.env.DB_USER,
+      password: process.env.DB_PASS,
+      database: process.env.DB_NAME,
+      host: process.env.DB_HOST,
+      dialect: process.env.DB_DIALECT || "mysql",
+    },
+    // ... (test and production configurations if needed)
+  };
+  ```
+
+### 6. Database Migrations
+
+Migrations are used to create and update your database schema (tables, columns, relationships).
+
+To run all pending migrations and set up your database tables:
+
+```bash
+npx sequelize-cli db:migrate
+```
+
+If you need to undo the last migration:
+
+```bash
+npx sequelize-cli db:migrate:undo
+```
+
+To undo all migrations:
+
+```bash
+npx sequelize-cli db:migrate:undo:all
+```
+
+### 7. Database Seeding
+
+Seeders are used to populate your database with initial data (e.g., vehicle types, initial vehicles).
+
+To run all seed files:
+
+```bash
+npx sequelize-cli db:seed:all
+```
+
+If you need to undo the last seed:
+
+```bash
+npx sequelize-cli db:seed:undo
+```
+
+To undo all seeds:
+
+```bash
+npx sequelize-cli db:seed:undo:all
+```
+
+**Note:** Seeder files often have dependencies (e.g., `initial-vehicles` depends on `initial-vehicle-types`). Undoing and re-seeding should generally be done for all or in the correct order.
+
+### 8. Running the Server
+
+Once the database is set up, migrated, and seeded, you can start the backend server.
+
+- **For development (with auto-restart using nodemon):**
+
+  ```bash
+  npm run dev
+  ```
+
+  The server will typically start on the port specified in your `.env` file (e.g., `http://localhost:5002`).
+
+- **For production:**
+  ```bash
+  npm start
+  ```
+
+You should see a console message indicating the server is running.
+
+## API Endpoints
+
+The following API endpoints are available:
+
+- **Vehicle Types:**
+  - `GET /api/vehicles/types?wheels={number}`: Get vehicle types filtered by the number of wheels (e.g., `?wheels=4`).
+- **Vehicles (Models):**
+  - `GET /api/vehicles?typeId={id}`: Get specific vehicle models filtered by `vehicleTypeId`.
+- **Bookings:**
+  - `POST /api/bookings`: Create a new vehicle booking. Expects a JSON body with:
+    ```json
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "vehicleId": 1, // ID of the specific vehicle
+      "startDate": "YYYY-MM-DD",
+      "endDate": "YYYY-MM-DD"
+    }
+    ```
