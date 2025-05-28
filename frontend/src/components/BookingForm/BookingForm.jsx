@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import formatDateStr from "date-fns/format";
+import HomeIcon from "@mui/icons-material/Home";
 
 import NameStep from "./NameStep";
 import WheelsStep from "./WheelsStep";
@@ -14,7 +15,12 @@ import DateStep from "./DateStep";
 import apiClient from "../../api/axiosConfig";
 import { toast } from "react-toastify";
 
-const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
+const SubmitStep = ({
+  formData,
+  handleBack,
+  handleSubmitBooking,
+  handleStartNewBooking,
+}) => {
   const { loading, error, success } = handleSubmitBooking;
 
   return (
@@ -30,43 +36,48 @@ const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
       <Typography variant="h6" align="center">
         Confirm Booking
       </Typography>
-      <Typography variant="body1">Please review your details:</Typography>
-      <Box
-        sx={{
-          p: 2,
-          border: "1px solid grey",
-          borderRadius: 1,
-          width: "100%",
-          bgcolor: "#f9f9f9",
-          overflowX: "auto",
-        }}
-      >
-        <pre>
-          {JSON.stringify(
-            formData,
-            (key, value) => {
-              if ((key === "startDate" || key === "endDate") && value) {
-                try {
-                  return formatDateStr(new Date(value), "dd-MM-yyyy");
-                } catch (error) {
-                  console.error("Error parsing date:", value, error);
+
+      {!loading && !success && !error && (
+        <>
+          <Typography variant="body1">Please review your details:</Typography>
+          <Box
+            sx={{
+              p: 2,
+              border: "1px solid grey",
+              borderRadius: 1,
+              width: "100%",
+              bgcolor: "#f9f9f9",
+              overflowX: "auto",
+            }}
+          >
+            <pre>
+              {JSON.stringify(
+                formData,
+                (key, value) => {
+                  if ((key === "startDate" || key === "endDate") && value) {
+                    try {
+                      return formatDateStr(new Date(value), "dd-MM-yyyy");
+                    } catch (e) {
+                      console.error("Error parsing date:", value, e);
+                      return value;
+                    }
+                  }
                   return value;
-                }
-              }
-              return value;
-            },
-            2
-          )}
-        </pre>
-      </Box>
+                },
+                2
+              )}
+            </pre>
+          </Box>
+        </>
+      )}
 
       {error && (
-        <Alert severity="error" sx={{ width: "100%" }}>
+        <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ width: "100%" }}>
+        <Alert severity="success" sx={{ width: "100%", mt: 2 }}>
           {success}
         </Alert>
       )}
@@ -77,19 +88,37 @@ const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
           justifyContent: "space-between",
           mt: 2,
           width: "100%",
+          gap: 2,
         }}
       >
-        <Button variant="outlined" onClick={handleBack} disabled={loading}>
-          Back
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmitBooking.submit}
-          disabled={loading || !!success}
-        >
-          {loading ? <CircularProgress size={24} /> : "Confirm & Book"}
-        </Button>
+        {!loading && !success && (
+          <Button variant="outlined" onClick={handleBack} disabled={loading}>
+            Back
+          </Button>
+        )}
+
+        {!loading && !error && !success && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmitBooking.submit}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : "Confirm & Book"}
+          </Button>
+        )}
+
+        {(error || success) && (
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<HomeIcon />}
+            onClick={handleStartNewBooking}
+            sx={{ flexGrow: !error ? 1 : 0 }}
+          >
+            New Booking
+          </Button>
+        )}
       </Box>
     </Box>
   );
@@ -104,19 +133,26 @@ const BookingForm = () => {
     success: null,
   });
 
+  const handleStartNewBooking = () => {
+    setCurrentStep(1);
+    setFormData({});
+    setSubmitState({ loading: false, error: null, success: null });
+  };
+
   const handleNext = (dataFromStep) => {
     if (!dataFromStep || Object.keys(dataFromStep).length === 0) {
       toast.error("Please make a selection before proceeding.");
       return;
     }
-    console.log("Data from step", currentStep, ":", dataFromStep);
     setFormData((prevData) => ({ ...prevData, ...dataFromStep }));
     setCurrentStep((prevStep) => prevStep + 1);
   };
 
   const handleBack = () => {
     setCurrentStep((prevStep) => prevStep - 1);
-    setSubmitState({ loading: false, error: null, success: null });
+    if (currentStep === 6) {
+      setSubmitState({ loading: false, error: null, success: null });
+    }
   };
 
   const handleSubmitBooking = async () => {
@@ -126,8 +162,12 @@ const BookingForm = () => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         vehicleId: parseInt(formData.vehicleId),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        startDate: formData.startDate
+          ? formatDateStr(formData.startDate, "yyyy-MM-dd")
+          : null,
+        endDate: formData.endDate
+          ? formatDateStr(formData.endDate, "yyyy-MM-dd")
+          : null,
       };
 
       if (
@@ -138,7 +178,7 @@ const BookingForm = () => {
         !payload.endDate
       ) {
         throw new Error(
-          "Missing booking information. Please go back and check your selections."
+          "Missing booking information. Please complete all steps."
         );
       }
 
@@ -148,9 +188,8 @@ const BookingForm = () => {
         success: response.data.message,
         error: null,
       });
-      toast.success(response.data.message || "Booking created successfully!"); // <-- Success Toast
+      toast.success(response.data.message || "Booking created successfully!");
     } catch (err) {
-      console.error("Booking failed:", err);
       const errorMessage =
         err.response?.data?.error ||
         err.message ||
@@ -205,6 +244,7 @@ const BookingForm = () => {
               submit: handleSubmitBooking,
               ...submitState,
             }}
+            handleStartNewBooking={handleStartNewBooking}
           />
         );
       default:
@@ -214,11 +254,8 @@ const BookingForm = () => {
             <Button
               variant="contained"
               sx={{ mt: 2 }}
-              onClick={() => {
-                setCurrentStep(1);
-                setFormData({});
-                setSubmitState({ loading: false, error: null, success: null });
-              }}
+              startIcon={<HomeIcon />}
+              onClick={handleStartNewBooking}
             >
               Start Over
             </Button>
