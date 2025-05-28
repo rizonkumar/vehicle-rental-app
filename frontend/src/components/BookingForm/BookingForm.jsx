@@ -4,8 +4,18 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
 import formatDateStr from "date-fns/format";
 import HomeIcon from "@mui/icons-material/Home";
+import AccountCircle from "@mui/icons-material/AccountCircle";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import EventRepeatIcon from "@mui/icons-material/EventRepeat";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DonutSmallIcon from "@mui/icons-material/DonutSmall";
 
 import NameStep from "./NameStep";
 import WheelsStep from "./WheelsStep";
@@ -15,6 +25,47 @@ import DateStep from "./DateStep";
 import apiClient from "../../api/axiosConfig";
 import { toast } from "react-toastify";
 
+// Helper component for summary items
+const SummaryItem = ({ icon, label, value }) => (
+  <Stack
+    direction={{ xs: "column", sm: "row" }}
+    spacing={{ xs: 0.5, sm: 2 }}
+    alignItems={{ xs: "flex-start", sm: "center" }}
+    sx={{
+      py: 1.5,
+      borderBottom: "1px solid",
+      borderColor: "divider",
+      "&:last-child": { borderBottom: "none" },
+    }}
+  >
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      sx={{ color: "primary.main" }}
+    >
+      {icon}
+      <Typography
+        variant="body1"
+        sx={{ fontWeight: "bold", minWidth: { xs: "auto", sm: 100 } }}
+      >
+        {label}:
+      </Typography>
+    </Stack>
+    <Typography
+      variant="body1"
+      sx={{
+        color: "text.secondary",
+        flexGrow: 1,
+        textAlign: { xs: "left", sm: "right" },
+        pl: { xs: 4, sm: 0 },
+      }}
+    >
+      {value || "N/A"}
+    </Typography>
+  </Stack>
+);
+
 const SubmitStep = ({
   formData,
   handleBack,
@@ -23,61 +74,117 @@ const SubmitStep = ({
 }) => {
   const { loading, error, success } = handleSubmitBooking;
 
+  const formatDate = (dateValue) => {
+    try {
+      return dateValue
+        ? formatDateStr(new Date(dateValue), "dd MMMM yyyy")
+        : "N/A";
+    } catch (e) {
+      console.error("Error formatting date:", dateValue, e);
+      return "Invalid Date";
+    }
+  };
+
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 3,
         width: "100%",
         alignItems: "center",
       }}
     >
-      <Typography variant="h6" align="center">
-        Confirm Booking
+      <Typography
+        variant="h6"
+        align="center"
+        sx={{ fontWeight: "600", color: "text.primary" }}
+      >
+        {loading
+          ? "Processing..."
+          : success || error
+          ? "Booking Status"
+          : "Confirm Booking"}
       </Typography>
 
       {!loading && !success && !error && (
         <>
-          <Typography variant="body1">Please review your details:</Typography>
-          <Box
+          <Typography variant="body1" align="center">
+            Please review your booking details:
+          </Typography>
+          <Paper
+            variant="outlined"
             sx={{
-              p: 2,
-              border: "1px solid grey",
-              borderRadius: 1,
+              p: { xs: 2, sm: 3 },
+              mt: 1,
               width: "100%",
-              bgcolor: "#f9f9f9",
-              overflowX: "auto",
+              bgcolor: "grey.50",
+              borderRadius: 2,
             }}
           >
-            <pre>
-              {JSON.stringify(
-                formData,
-                (key, value) => {
-                  if ((key === "startDate" || key === "endDate") && value) {
-                    try {
-                      return formatDateStr(new Date(value), "dd-MM-yyyy");
-                    } catch (e) {
-                      console.error("Error parsing date:", value, e);
-                      return value;
-                    }
-                  }
-                  return value;
-                },
-                2
-              )}
-            </pre>
-          </Box>
+            <Stack spacing={0}>
+              <SummaryItem
+                icon={<AccountCircle />}
+                label="Name"
+                value={`${formData.firstName} ${formData.lastName}`}
+              />
+              <SummaryItem
+                icon={<DirectionsCarIcon />}
+                label="Vehicle"
+                value={`${formData.vehicleModelName || "N/A"} (${
+                  formData.vehicleTypeName || "N/A"
+                })`}
+              />
+              <SummaryItem
+                icon={<DonutSmallIcon />}
+                label="Wheels"
+                value={`${formData.wheels || "N/A"} Wheels`}
+              />
+              <SummaryItem
+                icon={<CalendarTodayIcon />}
+                label="Start Date"
+                value={formatDate(formData.startDate)}
+              />
+              <SummaryItem
+                icon={<EventRepeatIcon />}
+                label="End Date"
+                value={formatDate(formData.endDate)}
+              />
+            </Stack>
+          </Paper>
         </>
       )}
 
+      {loading && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+            my: 4,
+          }}
+        >
+          <CircularProgress size={40} />
+          <Typography>Submitting your booking, please wait...</Typography>
+        </Box>
+      )}
+
       {error && (
-        <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
+        <Alert
+          icon={<ErrorOutlineIcon />}
+          severity="error"
+          sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
+        >
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ width: "100%", mt: 2 }}>
+        <Alert
+          icon={<CheckCircleOutlineIcon />}
+          severity="success"
+          sx={{ width: "100%", mt: 2, display: "flex", alignItems: "center" }}
+        >
           {success}
         </Alert>
       )}
@@ -85,14 +192,23 @@ const SubmitStep = ({
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: success || error ? "center" : "space-between",
           mt: 2,
           width: "100%",
           gap: 2,
         }}
       >
-        {!loading && !success && (
-          <Button variant="outlined" onClick={handleBack} disabled={loading}>
+        {!loading && !success && !error && (
+          <Button
+            variant="outlined"
+            onClick={handleBack}
+            disabled={loading}
+            startIcon={<ArrowBackIcon />}
+            sx={{
+              transition: "transform 0.15s ease-in-out",
+              "&:hover": { transform: "scale(1.05)" },
+            }}
+          >
             Back
           </Button>
         )}
@@ -103,8 +219,13 @@ const SubmitStep = ({
             color="primary"
             onClick={handleSubmitBooking.submit}
             disabled={loading}
+            endIcon={<CheckCircleOutlineIcon />}
+            sx={{
+              transition: "transform 0.15s ease-in-out",
+              "&:hover": { transform: "scale(1.05)" },
+            }}
           >
-            {loading ? <CircularProgress size={24} /> : "Confirm & Book"}
+            Confirm & Book
           </Button>
         )}
 
@@ -114,9 +235,13 @@ const SubmitStep = ({
             color="secondary"
             startIcon={<HomeIcon />}
             onClick={handleStartNewBooking}
-            sx={{ flexGrow: !error ? 1 : 0 }}
+            sx={{
+              flexGrow: { xs: 1, sm: 0.5 },
+              transition: "transform 0.15s ease-in-out",
+              "&:hover": { transform: "scale(1.05)" },
+            }}
           >
-            New Booking
+            Start New Booking
           </Button>
         )}
       </Box>
@@ -185,7 +310,7 @@ const BookingForm = () => {
       const response = await apiClient.post("/bookings", payload);
       setSubmitState({
         loading: false,
-        success: response.data.message,
+        success: response.data.message || "Booking confirmed!",
         error: null,
       });
       toast.success(response.data.message || "Booking created successfully!");
@@ -264,7 +389,7 @@ const BookingForm = () => {
     }
   };
 
-  return <Box sx={{ width: "100%", p: 2 }}>{renderStep()}</Box>;
+  return <Box sx={{ width: "100%", p: { xs: 1, sm: 2 } }}>{renderStep()}</Box>;
 };
 
 export default BookingForm;
