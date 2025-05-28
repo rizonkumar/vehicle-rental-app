@@ -44,10 +44,15 @@ const createNewBooking = async (bookingData) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
-    throw new ValidationError(
-      "Invalid dates provided. End date must be after start date."
-    );
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new ValidationError("Invalid date format. Please use YYYY-MM-DD.");
+  }
+
+  if (start.getTime() === end.getTime()) {
+    throw new ValidationError("Start Date and End Date cannot be same.");
+  }
+  if (start > end) {
+    throw new ValidationError("End date must be after start date.");
   }
 
   const t = await sequelize.transaction();
@@ -63,8 +68,8 @@ const createNewBooking = async (bookingData) => {
     const existingBooking = await Booking.findOne({
       where: {
         vehicleId: vehicleId,
-        startDate: { [Op.lte]: end },
-        endDate: { [Op.gte]: start },
+        startDate: { [Op.lt]: end },
+        endDate: { [Op.gt]: start },
       },
       transaction: t,
     });
