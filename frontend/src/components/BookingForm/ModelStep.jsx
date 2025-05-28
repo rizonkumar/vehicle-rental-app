@@ -1,4 +1,3 @@
-// frontend/src/components/BookingForm/ModelStep.jsx
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Radio from "@mui/material/Radio";
@@ -13,6 +12,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import apiClient from "../../api/axiosConfig";
+import { toast } from "react-toastify"; // <-- Import toast
 
 const ModelStep = ({ formData, handleNext, handleBack }) => {
   const {
@@ -29,17 +29,21 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch vehicle models based on the selected type ID
   useEffect(() => {
     const fetchVehicleModels = async () => {
       setIsLoading(true);
       setError(null);
+      setVehicleModels([]); // Reset
+
       try {
         if (!formData.vehicleTypeId) {
-          throw new Error("Vehicle type not selected.");
+          const msg = "Vehicle type not selected.";
+          setError(msg);
+          toast.warn(msg);
+          return;
         }
         const response = await apiClient.get(
-          `/vehicles?typeId=${formData.vehicleTypeId}`
+          `/vehicles/${formData.vehicleTypeId}`
         );
         setVehicleModels(response.data);
         if (response.data.length === 0) {
@@ -47,11 +51,18 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
         }
       } catch (err) {
         console.error("Failed to fetch vehicle models:", err);
-        setError(
-          err.response?.data?.error ||
-            err.message ||
-            "Could not fetch vehicle models."
-        );
+        let message;
+        if (err.response) {
+          message = err.response.data.message || err.response.data.error;
+          if (err.response.status !== 404) {
+            toast.error(message || "Could not fetch vehicle models.");
+          }
+        } else {
+          message = "Network error or server unavailable.";
+          toast.error(message);
+        }
+        setError(message);
+        setVehicleModels([]);
       } finally {
         setIsLoading(false);
       }
@@ -61,7 +72,10 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
   }, [formData.vehicleTypeId]);
 
   const onSubmit = (data) => {
-    // Find the name of the selected model
+    if (!data.vehicleId) {
+      toast.error("Please select a specific model.");
+      return;
+    }
     const selectedModel = vehicleModels.find(
       (model) => model.id === parseInt(data.vehicleId)
     );
@@ -87,8 +101,11 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
           </Box>
         )}
 
-        {error && (
-          <Alert severity="error" sx={{ my: 2 }}>
+        {error && !isLoading && (
+          <Alert
+            severity={vehicleModels.length > 0 ? "warning" : "error"}
+            sx={{ my: 2 }}
+          >
             {error}
           </Alert>
         )}
@@ -116,6 +133,12 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
             )}
           />
         )}
+        {/* If not loading and no models and no error, show a message */}
+        {!isLoading && vehicleModels.length === 0 && !error && (
+          <Alert severity="info" sx={{ my: 2 }}>
+            No models available for this type.
+          </Alert>
+        )}
 
         {errors.vehicleId && (
           <FormHelperText>{errors.vehicleId.message}</FormHelperText>
@@ -130,7 +153,7 @@ const ModelStep = ({ formData, handleNext, handleBack }) => {
           type="submit"
           variant="contained"
           color="primary"
-          disabled={isLoading || !!error || vehicleModels.length === 0}
+          disabled={isLoading || vehicleModels.length === 0}
         >
           Next
         </Button>

@@ -1,4 +1,3 @@
-// frontend/src/components/BookingForm/BookingForm.jsx
 import { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -10,12 +9,12 @@ import NameStep from "./NameStep";
 import WheelsStep from "./WheelsStep";
 import TypeStep from "./TypeStep";
 import ModelStep from "./ModelStep";
-import DateStep from "./DateStep"; // <-- Import DateStep
-import apiClient from "../../api/axiosConfig"; // Need this for submission
+import DateStep from "./DateStep";
+import apiClient from "../../api/axiosConfig";
+import { toast } from "react-toastify";
 
-// A simple component for the final step
 const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
-  const { loading, error, success } = handleSubmitBooking; // Get state
+  const { loading, error, success } = handleSubmitBooking;
 
   return (
     <Box
@@ -38,17 +37,18 @@ const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
           borderRadius: 1,
           width: "100%",
           bgcolor: "#f9f9f9",
+          overflowX: "auto",
         }}
       >
         <pre>
           {JSON.stringify(
             formData,
             (key, value) => {
-              // Format dates nicely for display
               if ((key === "startDate" || key === "endDate") && value) {
                 try {
                   return new Date(value).toLocaleDateString();
-                } catch (e) {
+                } catch (error) {
+                  console.error("Error parsing date:", value, error);
                   return value;
                 }
               }
@@ -84,8 +84,8 @@ const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
         <Button
           variant="contained"
           color="primary"
-          onClick={handleSubmitBooking.submit} // Call submit function
-          disabled={loading || !!success} // Disable if loading or successful
+          onClick={handleSubmitBooking.submit}
+          disabled={loading || !!success}
         >
           {loading ? <CircularProgress size={24} /> : "Confirm & Book"}
         </Button>
@@ -104,6 +104,10 @@ const BookingForm = () => {
   });
 
   const handleNext = (dataFromStep) => {
+    if (!dataFromStep || Object.keys(dataFromStep).length === 0) {
+      toast.error("Please make a selection before proceeding.");
+      return;
+    }
     console.log("Data from step", currentStep, ":", dataFromStep);
     setFormData((prevData) => ({ ...prevData, ...dataFromStep }));
     setCurrentStep((prevStep) => prevStep + 1);
@@ -111,21 +115,31 @@ const BookingForm = () => {
 
   const handleBack = () => {
     setCurrentStep((prevStep) => prevStep - 1);
-    setSubmitState({ loading: false, error: null, success: null }); // Reset submit state on back
+    setSubmitState({ loading: false, error: null, success: null });
   };
 
-  // --- Booking Submission Logic ---
   const handleSubmitBooking = async () => {
     setSubmitState({ loading: true, error: null, success: null });
     try {
-      // Prepare data for backend (ensure IDs are numbers, etc.)
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         vehicleId: parseInt(formData.vehicleId),
-        startDate: formData.startDate.toISOString().split("T")[0], // YYYY-MM-DD
-        endDate: formData.endDate.toISOString().split("T")[0], // YYYY-MM-DD
+        startDate: formData.startDate,
+        endDate: formData.endDate,
       };
+
+      if (
+        !payload.firstName ||
+        !payload.lastName ||
+        !payload.vehicleId ||
+        !payload.startDate ||
+        !payload.endDate
+      ) {
+        throw new Error(
+          "Missing booking information. Please go back and check your selections."
+        );
+      }
 
       const response = await apiClient.post("/bookings", payload);
       setSubmitState({
@@ -133,12 +147,15 @@ const BookingForm = () => {
         success: response.data.message,
         error: null,
       });
+      toast.success(response.data.message || "Booking created successfully!"); // <-- Success Toast
     } catch (err) {
       console.error("Booking failed:", err);
       const errorMessage =
         err.response?.data?.error ||
+        err.message ||
         "An unexpected error occurred during booking.";
       setSubmitState({ loading: false, error: errorMessage, success: null });
+      toast.error(errorMessage);
     }
   };
 
@@ -170,7 +187,7 @@ const BookingForm = () => {
             handleBack={handleBack}
           />
         );
-      case 5: // <-- Add Case 5 for DateStep
+      case 5:
         return (
           <DateStep
             formData={formData}
@@ -178,22 +195,30 @@ const BookingForm = () => {
             handleBack={handleBack}
           />
         );
-      case 6: // <-- Add Case 6 for SubmitStep
+      case 6:
         return (
           <SubmitStep
             formData={formData}
             handleBack={handleBack}
             handleSubmitBooking={{
-              submit: handleSubmitBooking, // Pass the function
-              ...submitState, // Pass loading/error/success state
+              submit: handleSubmitBooking,
+              ...submitState,
             }}
           />
         );
       default:
         return (
-          <Box>
-            <Typography>Something went wrong, please start over.</Typography>
-            <Button variant="outlined" onClick={() => setCurrentStep(1)}>
+          <Box sx={{ textAlign: "center" }}>
+            <Typography>Something went wrong. Let's start over.</Typography>
+            <Button
+              variant="contained"
+              sx={{ mt: 2 }}
+              onClick={() => {
+                setCurrentStep(1);
+                setFormData({});
+                setSubmitState({ loading: false, error: null, success: null });
+              }}
+            >
               Start Over
             </Button>
           </Box>

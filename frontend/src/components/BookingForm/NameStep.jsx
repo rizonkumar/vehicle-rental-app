@@ -23,11 +23,11 @@ const NameStep = ({ formData, handleNext }) => {
   return (
     <Box
       component="form"
-      onSubmit={handleSubmit(onSubmit)} // Use RHF's handleSubmit
+      onSubmit={handleSubmit(onSubmit)}
       sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
     >
       <Typography variant="h6" align="center">
-        First, what's your name? [cite: 26]
+        First, what's your name?
       </Typography>
 
       {/* First Name Input */}
