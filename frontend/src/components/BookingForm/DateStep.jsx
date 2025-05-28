@@ -1,10 +1,10 @@
-// frontend/src/components/BookingForm/DateStep.jsx
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { DateRangePicker } from "@mui/x-date-pickers/DateRangePicker";
+import { DateRangePicker } from "@mui/x-date-pickers-pro/DateRangePicker";
+
 import { TextField } from "@mui/material"; // Needed for DateRangePicker rendering
 import { isAfter, startOfDay } from "date-fns"; // For date validation
 
@@ -23,10 +23,9 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
     },
   });
 
-  const dateRangeValue = watch("dateRange"); // Watch value for custom validation msg
+  const dateRangeValue = watch("dateRange");
 
   const onSubmit = (data) => {
-    // Extract start and end dates before passing
     handleNext({
       startDate: data.dateRange[0],
       endDate: data.dateRange[1],

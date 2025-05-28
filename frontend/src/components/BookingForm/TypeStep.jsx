@@ -53,10 +53,9 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
     };
 
     fetchVehicleTypes();
-  }, [formData.wheels]); // Re-run if 'wheels' changes
+  }, [formData.wheels]);
 
   const onSubmit = (data) => {
-    // Find the name of the selected type to potentially store in formData if needed
     const selectedType = vehicleTypes.find(
       (type) => type.id === parseInt(data.vehicleTypeId)
     );
@@ -70,7 +69,7 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
       sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
     >
       <Typography variant="h6" align="center">
-        Type of vehicle? [cite: 21]
+        Type of vehicle?
       </Typography>
 
       <FormControl component="fieldset" error={!!errors.vehicleTypeId}>
@@ -99,11 +98,10 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
                 aria-label="vehicle-type"
                 name="vehicleTypeId"
               >
-                {/* Render radio buttons based on fetched data [cite: 21] */}
                 {vehicleTypes.map((type) => (
                   <FormControlLabel
                     key={type.id}
-                    value={type.id.toString()} // Ensure value is a string for RadioGroup
+                    value={type.id.toString()}
                     control={<Radio />}
                     label={type.name}
                   />
