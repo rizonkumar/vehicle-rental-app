@@ -3,9 +3,12 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { TextField } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import Stack from "@mui/material/Stack";
 import { isAfter, startOfDay, isBefore, isSameDay } from "date-fns";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 const DateStep = ({ formData, handleNext, handleBack }) => {
   const {
@@ -33,13 +36,10 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
   };
 
   const onError = (formErrors) => {
-    let messageToShow = "Please fix the date errors before proceeding.";
-
-    if (formErrors.startDate?.message) {
-      messageToShow = formErrors.startDate.message;
-    } else if (formErrors.endDate?.message) {
-      messageToShow = formErrors.endDate.message;
-    }
+    const messageToShow =
+      formErrors.startDate?.message ||
+      formErrors.endDate?.message ||
+      "Please fix the date errors before proceeding.";
     toast.error(messageToShow);
   };
 
@@ -47,13 +47,23 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
     <Box
       component="form"
       onSubmit={handleSubmit(onSubmit, onError)}
-      sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}
+      sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}
     >
-      <Typography variant="h6" align="center">
+      <Typography
+        variant="h6"
+        align="center"
+        sx={{ fontWeight: "600", color: "text.primary" }}
+      >
         Select Booking Dates
       </Typography>
 
-      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ width: "100%" }}
+      >
         <Controller
           name="startDate"
           control={control}
@@ -61,13 +71,21 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
             required: "Start date is required.",
             validate: (value) => {
               if (!value) return true;
-              if (isAfter(startOfDay(new Date()), value)) {
+              const today = startOfDay(new Date());
+              const dateValue = startOfDay(value);
+              if (isBefore(dateValue, today)) {
                 return "Start date cannot be in the past.";
               }
-              if (endDateValue && isAfter(value, endDateValue)) {
+              if (
+                endDateValue &&
+                isAfter(dateValue, startOfDay(endDateValue))
+              ) {
                 return "Start date cannot be after end date.";
               }
-              if (endDateValue && isSameDay(value, endDateValue)) {
+              if (
+                endDateValue &&
+                isSameDay(dateValue, startOfDay(endDateValue))
+              ) {
                 return "Start Date and End Date cannot be same.";
               }
               return true;
@@ -89,12 +107,21 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
                   fullWidth
                   error={!!errors.startDate}
                   helperText={errors.startDate?.message}
+                  sx={{ width: "100%", minWidth: { sm: 220 } }}
                 />
               )}
             />
           )}
         />
-        <Typography sx={{ pt: 2 }}>to</Typography>
+        <Typography
+          sx={{
+            fontWeight: "bold",
+            color: "text.secondary",
+            py: { xs: 1, sm: 0 },
+          }}
+        >
+          TO
+        </Typography>
         <Controller
           name="endDate"
           control={control}
@@ -102,10 +129,17 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
             required: "End date is required.",
             validate: (value) => {
               if (!value) return true;
-              if (startDateValue && isBefore(value, startDateValue)) {
+              const dateValue = startOfDay(value);
+              if (
+                startDateValue &&
+                isBefore(dateValue, startOfDay(startDateValue))
+              ) {
                 return "End date cannot be before start date.";
               }
-              if (startDateValue && isSameDay(value, startDateValue)) {
+              if (
+                startDateValue &&
+                isSameDay(dateValue, startOfDay(startDateValue))
+              ) {
                 return "Start Date and End Date cannot be same.";
               }
               return true;
@@ -117,7 +151,11 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               label="Booking End"
               disablePast
               format="dd-MM-yyyy"
-              minDate={startDateValue || undefined}
+              minDate={
+                startDateValue
+                  ? new Date(startDateValue.getTime() + 86400000)
+                  : undefined
+              } // Set minDate to day after start
               onChange={(date) => {
                 field.onChange(date);
                 trigger("startDate");
@@ -128,18 +166,36 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
                   fullWidth
                   error={!!errors.endDate}
                   helperText={errors.endDate?.message}
+                  sx={{ width: "100%", minWidth: { sm: 220 } }}
                 />
               )}
             />
           )}
         />
-      </Box>
+      </Stack>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-        <Button variant="outlined" onClick={handleBack}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+          startIcon={<ArrowBackIcon />}
+          sx={{
+            transition: "transform 0.15s ease-in-out",
+            "&:hover": { transform: "scale(1.05)" },
+          }}
+        >
           Back
         </Button>
-        <Button type="submit" variant="contained" color="primary">
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          endIcon={<ArrowForwardIcon />}
+          sx={{
+            transition: "transform 0.15s ease-in-out",
+            "&:hover": { transform: "scale(1.05)" },
+          }}
+        >
           Next
         </Button>
       </Box>

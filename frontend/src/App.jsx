@@ -4,10 +4,11 @@ import Box from "@mui/material/Box";
 import BookingForm from "./components/BookingForm/BookingForm";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CarRentalIcon from "@mui/icons-material/CarRental";
 
 function App() {
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="md">
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -22,17 +23,32 @@ function App() {
       />
       <Box
         sx={{
-          my: 4,
+          mt: { xs: 4, sm: 8 },
+          mb: 4,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           bgcolor: "background.paper",
-          p: 3,
-          borderRadius: 2,
-          boxShadow: 3,
+          p: { xs: 3, sm: 5 },
+          borderRadius: 4,
+          boxShadow:
+            "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+          border: "1px solid",
+          borderColor: "divider",
         }}
       >
-        <Typography variant="h4" component="h1" gutterBottom>
+        <CarRentalIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
+
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: "700",
+            color: "text.primary",
+            textAlign: "center",
+            mb: 4,
+          }}
+        >
           Vehicle Rental Booking
         </Typography>
         <BookingForm />

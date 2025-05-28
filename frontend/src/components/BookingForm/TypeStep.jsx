@@ -4,15 +4,66 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import FormHelperText from "@mui/material/FormHelperText";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import Grid from "@mui/material/Grid";
 import apiClient from "../../api/axiosConfig";
 import { toast } from "react-toastify";
+import { useTheme } from "@mui/material/styles";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+
+const CardLabel = ({ value, text, selectedValue }) => {
+  const theme = useTheme();
+  const isSelected = selectedValue === value;
+
+  return (
+    <Box
+      sx={{
+        border: "2px solid",
+        borderColor: isSelected
+          ? theme.palette.primary.main
+          : theme.palette.grey[300],
+        bgcolor: isSelected
+          ? `${theme.palette.primary.main}1A`
+          : "background.paper",
+        borderRadius: 2,
+        p: 2,
+        width: "100%",
+        minHeight: 80,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        transition: "all 0.2s ease-in-out",
+        transform: isSelected ? "scale(1.05)" : "scale(1)",
+        boxShadow: isSelected ? theme.shadows[4] : theme.shadows[1],
+        textAlign: "center",
+        "&:hover": {
+          borderColor: isSelected
+            ? theme.palette.primary.main
+            : theme.palette.primary.light,
+          boxShadow: theme.shadows[3],
+        },
+      }}
+    >
+      <Typography
+        variant="button"
+        sx={{
+          color: isSelected ? theme.palette.primary.dark : "text.primary",
+          fontWeight: isSelected ? "bold" : "normal",
+          lineHeight: 1.2, // Adjust line height for better wrapping if needed
+        }}
+      >
+        {text}
+      </Typography>
+    </Box>
+  );
+};
 
 const TypeStep = ({ formData, handleNext, handleBack }) => {
   const {
@@ -37,32 +88,25 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
 
       try {
         if (!formData.wheels) {
-          const msg = "Number of wheels not selected.";
-          setError(msg);
-          toast.warn(msg);
+          setError("Number of wheels not selected. Please go back.");
+          toast.warn("Number of wheels not selected. Please go back.");
           return;
         }
         const response = await apiClient.get(
           `/vehicles/types?wheels=${formData.wheels}`
         );
-        setVehicleTypes(response.data);
         if (response.data.length === 0) {
           setError(`No vehicle types found for ${formData.wheels} wheels.`);
+        } else {
+          setVehicleTypes(response.data);
         }
       } catch (err) {
-        console.error("Failed to fetch vehicle types:", err);
-        let message;
-        if (err.response) {
-          message = err.response.data.message || err.response.data.error;
-          if (err.response.status !== 404) {
-            toast.error(message || "Could not fetch vehicle types.");
-          }
-        } else {
-          message = "Network error or server unavailable.";
-          toast.error(message);
-        }
+        const message =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Could not fetch vehicle types.";
         setError(message);
-        setVehicleTypes([]);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -86,31 +130,47 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
     <Box
       component="form"
       onSubmit={handleSubmit(onSubmit)}
-      sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
+      sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}
     >
-      <Typography variant="h6" align="center">
+      <Typography
+        variant="h6"
+        align="center"
+        sx={{ fontWeight: "600", color: "text.primary" }}
+      >
         Type of vehicle?
       </Typography>
 
-      <FormControl component="fieldset" error={!!errors.vehicleTypeId}>
-        <FormLabel component="legend">Select a vehicle type:</FormLabel>
-
+      <FormControl
+        component="fieldset"
+        error={!!errors.vehicleTypeId}
+        sx={{
+          width: "100%",
+          minHeight: 150,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         {isLoading && (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexGrow: 1,
+              my: 3,
+            }}
+          >
             <CircularProgress />
           </Box>
         )}
 
         {error && !isLoading && (
-          <Alert
-            severity={vehicleTypes.length > 0 ? "warning" : "error"}
-            sx={{ my: 2 }}
-          >
+          <Alert severity="error" sx={{ my: 3, width: "100%" }}>
             {error}
           </Alert>
         )}
 
-        {!isLoading && vehicleTypes.length > 0 && (
+        {!isLoading && !error && vehicleTypes.length > 0 && (
           <Controller
             name="vehicleTypeId"
             control={control}
@@ -121,37 +181,65 @@ const TypeStep = ({ formData, handleNext, handleBack }) => {
                 aria-label="vehicle-type"
                 name="vehicleTypeId"
               >
-                {vehicleTypes.map((type) => (
-                  <FormControlLabel
-                    key={type.id}
-                    value={type.id.toString()}
-                    control={<Radio />}
-                    label={type.name}
-                  />
-                ))}
+                <Grid
+                  container
+                  spacing={2}
+                  justifyContent="center"
+                  sx={{ mt: 1 }}
+                >
+                  {vehicleTypes.map((type) => (
+                    <Grid item key={type.id} xs={6} sm={4}>
+                      <FormControlLabel
+                        value={type.id.toString()}
+                        control={<Radio sx={{ display: "none" }} />}
+                        label={
+                          <CardLabel
+                            value={type.id.toString()}
+                            text={type.name}
+                            selectedValue={field.value}
+                          />
+                        }
+                        sx={{ m: 0, width: "100%" }}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
               </RadioGroup>
             )}
           />
         )}
 
-        {errors.vehicleTypeId && (
-          <FormHelperText>{errors.vehicleTypeId.message}</FormHelperText>
+        {errors.vehicleTypeId && !isLoading && (
+          <FormHelperText
+            sx={{ textAlign: "center", mt: 1, color: "error.main" }}
+          >
+            {errors.vehicleTypeId.message}
+          </FormHelperText>
         )}
       </FormControl>
 
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-        <Button variant="outlined" onClick={handleBack}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+          startIcon={<ArrowBackIcon />}
+          sx={{
+            transition: "transform 0.15s ease-in-out",
+            "&:hover": { transform: "scale(1.05)" },
+          }}
+        >
           Back
         </Button>
         <Button
           type="submit"
           variant="contained"
           color="primary"
-          disabled={
-            isLoading ||
-            (!!error && vehicleTypes.length === 0) ||
-            vehicleTypes.length === 0
-          }
+          endIcon={<ArrowForwardIcon />}
+          disabled={isLoading || !vehicleTypes.length}
+          sx={{
+            transition: "transform 0.15s ease-in-out",
+            "&:hover": { transform: "scale(1.05)" },
+          }}
         >
           Next
         </Button>
