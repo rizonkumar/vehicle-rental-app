@@ -1,5 +1,6 @@
 const { Booking, User, Vehicle, sequelize } = require("../models");
 const { Op, where } = require("sequelize");
+const { format: formatDateStr } = require("date-fns");
 
 // Custom Error Classes for specific issues
 class BookingConflictError extends Error {
@@ -44,10 +45,15 @@ const createNewBooking = async (bookingData) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
-    throw new ValidationError(
-      "Invalid dates provided. End date must be after start date."
-    );
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new ValidationError("Invalid date format. Please use YYYY-MM-DD.");
+  }
+
+  if (start.getTime() === end.getTime()) {
+    throw new ValidationError("Start Date and End Date cannot be same.");
+  }
+  if (start > end) {
+    throw new ValidationError("End date must be after start date.");
   }
 
   const t = await sequelize.transaction();
@@ -63,15 +69,22 @@ const createNewBooking = async (bookingData) => {
     const existingBooking = await Booking.findOne({
       where: {
         vehicleId: vehicleId,
-        startDate: { [Op.lte]: end },
-        endDate: { [Op.gte]: start },
+        startDate: { [Op.lt]: end },
+        endDate: { [Op.gt]: start },
       },
       transaction: t,
     });
 
     if (existingBooking) {
+      const existingStart = formatDateStr(
+        existingBooking.startDate,
+        "dd-MM-yyyy"
+      );
+
+      const existingEnd = formatDateStr(existingBooking.endDate, "dd-MM-yyyy");
+
       throw new BookingConflictError(
-        "Vehicle is already booked for the selected date range."
+        `Vehicle is already booked from ${existingStart} to ${existingEnd}. Please select different dates.`
       );
     }
     // Find or Create User ---

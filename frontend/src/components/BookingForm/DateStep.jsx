@@ -2,25 +2,26 @@ import { useForm, Controller } from "react-hook-form";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker"; // Changed import
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TextField } from "@mui/material";
-import { isAfter, startOfDay } from "date-fns";
+import { isAfter, startOfDay, isBefore, isSameDay } from "date-fns";
+import { toast } from "react-toastify"; // Import toast
 
 const DateStep = ({ formData, handleNext, handleBack }) => {
   const {
     control,
     handleSubmit,
     formState: { errors },
-    watch, // We need watch to compare dates
+    watch,
+    trigger,
   } = useForm({
     defaultValues: {
-      // Use separate fields now
       startDate: formData.startDate ? new Date(formData.startDate) : null,
       endDate: formData.endDate ? new Date(formData.endDate) : null,
     },
+    mode: "onChange",
   });
 
-  // Watch the values to use them in validation
   const startDateValue = watch("startDate");
   const endDateValue = watch("endDate");
 
@@ -31,10 +32,21 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
     });
   };
 
+  const onError = (formErrors) => {
+    let messageToShow = "Please fix the date errors before proceeding.";
+
+    if (formErrors.startDate?.message) {
+      messageToShow = formErrors.startDate.message;
+    } else if (formErrors.endDate?.message) {
+      messageToShow = formErrors.endDate.message;
+    }
+    toast.error(messageToShow);
+  };
+
   return (
     <Box
       component="form"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, onError)}
       sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}
     >
       <Typography variant="h6" align="center">
@@ -42,22 +54,21 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
       </Typography>
 
       <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
-        {" "}
-        {/* Container for pickers */}
-        {/* Start Date Picker */}
         <Controller
           name="startDate"
           control={control}
           rules={{
             required: "Start date is required.",
             validate: (value) => {
-              if (!value) return true; // Let required handle null
+              if (!value) return true;
               if (isAfter(startOfDay(new Date()), value)) {
                 return "Start date cannot be in the past.";
               }
-              // Check if endDate exists and if startDate is before endDate
-              if (endDateValue && !isAfter(endDateValue, value)) {
-                return "Start date must be before end date.";
+              if (endDateValue && isAfter(value, endDateValue)) {
+                return "Start date cannot be after end date.";
+              }
+              if (endDateValue && isSameDay(value, endDateValue)) {
+                return "Start Date and End Date cannot be same.";
               }
               return true;
             },
@@ -67,6 +78,11 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               {...field}
               label="Booking Start"
               disablePast
+              format="dd-MM-yyyy"
+              onChange={(date) => {
+                field.onChange(date);
+                trigger("endDate");
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -78,18 +94,19 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
             />
           )}
         />
-        <Typography sx={{ pt: 2 }}>to</Typography> {/* Separator */}
-        {/* End Date Picker */}
+        <Typography sx={{ pt: 2 }}>to</Typography>
         <Controller
           name="endDate"
           control={control}
           rules={{
             required: "End date is required.",
             validate: (value) => {
-              if (!value) return true; // Let required handle null
-              // Check if startDate exists and if endDate is after startDate
-              if (startDateValue && !isAfter(value, startDateValue)) {
-                return "End date must be after start date.";
+              if (!value) return true;
+              if (startDateValue && isBefore(value, startDateValue)) {
+                return "End date cannot be before start date.";
+              }
+              if (startDateValue && isSameDay(value, startDateValue)) {
+                return "Start Date and End Date cannot be same.";
               }
               return true;
             },
@@ -99,7 +116,12 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               {...field}
               label="Booking End"
               disablePast
-              minDate={startDateValue || undefined} // Set minDate based on start
+              format="dd-MM-yyyy"
+              minDate={startDateValue || undefined}
+              onChange={(date) => {
+                field.onChange(date);
+                trigger("startDate");
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}

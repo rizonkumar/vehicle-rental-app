@@ -30,46 +30,43 @@ const NameStep = ({ formData, handleNext }) => {
         First, what's your name?
       </Typography>
 
-      {/* First Name Input */}
       <Controller
         name="firstName"
         control={control}
-        rules={{ required: "First name is required" }} // Validation rule
+        rules={{ required: "First name is required" }}
         render={({ field }) => (
           <TextField
             {...field}
             label="First Name"
             variant="outlined"
             fullWidth
-            error={!!errors.firstName} // Show error state if exists
-            helperText={errors.firstName?.message} // Show error message
+            error={!!errors.firstName}
+            helperText={errors.firstName?.message}
           />
         )}
       />
 
-      {/* Last Name Input */}
       <Controller
         name="lastName"
         control={control}
-        rules={{ required: "Last name is required" }} // Validation rule
+        rules={{ required: "Last name is required" }}
         render={({ field }) => (
           <TextField
             {...field}
             label="Last Name"
             variant="outlined"
             fullWidth
-            error={!!errors.lastName} // Show error state
-            helperText={errors.lastName?.message} // Show error message
+            error={!!errors.lastName}
+            helperText={errors.lastName?.message}
           />
         )}
       />
 
-      {/* Next Button */}
       <Button
-        type="submit" // Will trigger handleSubmit
+        type="submit"
         variant="contained"
         color="primary"
-        sx={{ mt: 2, alignSelf: "flex-end" }} // Align to the right
+        sx={{ mt: 2, alignSelf: "flex-end" }}
       >
         Next
       </Button>
