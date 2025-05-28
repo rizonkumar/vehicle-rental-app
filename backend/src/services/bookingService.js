@@ -75,8 +75,12 @@ const createNewBooking = async (bookingData) => {
     });
 
     if (existingBooking) {
+      const existingStart =
+        existingBooking.startDate.toLocaleDateString("en-US");
+      const existingEnd = existingBooking.endDate.toLocaleDateString("en-EN");
+
       throw new BookingConflictError(
-        "Vehicle is already booked for the selected date range."
+        `Vehicle is already booked from ${existingStart} to ${existingEnd}. Please select different dates.`
       );
     }
     // Find or Create User ---

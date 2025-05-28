@@ -30,7 +30,6 @@ const NameStep = ({ formData, handleNext }) => {
         First, what's your name?
       </Typography>
 
-      {/* First Name Input */}
       <Controller
         name="firstName"
         control={control}
@@ -47,7 +46,6 @@ const NameStep = ({ formData, handleNext }) => {
         )}
       />
 
-      {/* Last Name Input */}
       <Controller
         name="lastName"
         control={control}
@@ -64,12 +62,11 @@ const NameStep = ({ formData, handleNext }) => {
         )}
       />
 
-      {/* Next Button */}
       <Button
-        type="submit" // Will trigger handleSubmit
+        type="submit"
         variant="contained"
         color="primary"
-        sx={{ mt: 2, alignSelf: "flex-end" }} // Align to the right
+        sx={{ mt: 2, alignSelf: "flex-end" }}
       >
         Next
       </Button>

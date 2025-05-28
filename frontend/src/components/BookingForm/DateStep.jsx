@@ -19,13 +19,12 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
       startDate: formData.startDate ? new Date(formData.startDate) : null,
       endDate: formData.endDate ? new Date(formData.endDate) : null,
     },
-    mode: "onChange", // Validate on change for better immediate feedback
+    mode: "onChange",
   });
 
   const startDateValue = watch("startDate");
   const endDateValue = watch("endDate");
 
-  // This function is called ONLY when validation succeeds
   const onSubmit = (data) => {
     handleNext({
       startDate: data.startDate,
@@ -33,16 +32,13 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
     });
   };
 
-  // This function is called ONLY when validation FAILS on submit attempt
   const onError = (formErrors) => {
     console.error("Form Validation Failed:", formErrors);
-    // Show a toast for the first error found
     if (formErrors.startDate?.message) {
       toast.error(formErrors.startDate.message);
     } else if (formErrors.endDate?.message) {
       toast.error(formErrors.endDate.message);
     } else {
-      // This is a fallback, usually one of the above will trigger
       toast.error("Please fix the date errors before proceeding.");
     }
   };
@@ -50,7 +46,6 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
   return (
     <Box
       component="form"
-      // Pass both onSubmit and onError to handleSubmit
       onSubmit={handleSubmit(onSubmit, onError)}
       sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}
     >
@@ -85,7 +80,7 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               disablePast
               onChange={(date) => {
                 field.onChange(date);
-                trigger("endDate"); // Re-validate endDate
+                trigger("endDate");
               }}
               renderInput={(params) => (
                 <TextField
@@ -123,7 +118,7 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               minDate={startDateValue || undefined}
               onChange={(date) => {
                 field.onChange(date);
-                trigger("startDate"); // Re-validate startDate
+                trigger("startDate");
               }}
               renderInput={(params) => (
                 <TextField
