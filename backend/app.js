@@ -1,20 +1,25 @@
 const express = require("express");
 const cors = require("cors");
+const db = require("./src/models");
+const errorHandler = require("./src/middleware/errorHandler");
 
 const app = express();
 
-// Middleware
-app.use(cors()); // Allow requests from our frontend
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+const vehicleRoutes = require("./src/routes/vehicleRoutes.js");
+const bookingRoutes = require("./src/routes/bookingRoutes.js");
 
-// Simple test route
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the Vehicle Rental Backend!" });
 });
 
-// TODO: Add API routes (e.g., app.use('/api/vehicles', vehicleRoutes);)
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/bookings", bookingRoutes);
 
-// TODO: Add Global Error Handler
+app.use(errorHandler);
 
 module.exports = app;
