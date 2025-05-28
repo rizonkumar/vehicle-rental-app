@@ -1,5 +1,6 @@
 const { Booking, User, Vehicle, sequelize } = require("../models");
 const { Op, where } = require("sequelize");
+const { format: formatDateStr } = require("date-fns");
 
 // Custom Error Classes for specific issues
 class BookingConflictError extends Error {
@@ -75,9 +76,12 @@ const createNewBooking = async (bookingData) => {
     });
 
     if (existingBooking) {
-      const existingStart =
-        existingBooking.startDate.toLocaleDateString("en-US");
-      const existingEnd = existingBooking.endDate.toLocaleDateString("en-EN");
+      const existingStart = formatDateStr(
+        existingBooking.startDate,
+        "dd-MM-yyyy"
+      );
+
+      const existingEnd = formatDateStr(existingBooking.endDate, "dd-MM-yyyy");
 
       throw new BookingConflictError(
         `Vehicle is already booked from ${existingStart} to ${existingEnd}. Please select different dates.`

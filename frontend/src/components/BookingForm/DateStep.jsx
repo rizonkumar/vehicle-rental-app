@@ -33,14 +33,14 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
   };
 
   const onError = (formErrors) => {
-    console.error("Form Validation Failed:", formErrors);
+    let messageToShow = "Please fix the date errors before proceeding.";
+
     if (formErrors.startDate?.message) {
-      toast.error(formErrors.startDate.message);
+      messageToShow = formErrors.startDate.message;
     } else if (formErrors.endDate?.message) {
-      toast.error(formErrors.endDate.message);
-    } else {
-      toast.error("Please fix the date errors before proceeding.");
+      messageToShow = formErrors.endDate.message;
     }
+    toast.error(messageToShow);
   };
 
   return (
@@ -78,6 +78,7 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               {...field}
               label="Booking Start"
               disablePast
+              format="dd-MM-yyyy"
               onChange={(date) => {
                 field.onChange(date);
                 trigger("endDate");
@@ -115,6 +116,7 @@ const DateStep = ({ formData, handleNext, handleBack }) => {
               {...field}
               label="Booking End"
               disablePast
+              format="dd-MM-yyyy"
               minDate={startDateValue || undefined}
               onChange={(date) => {
                 field.onChange(date);

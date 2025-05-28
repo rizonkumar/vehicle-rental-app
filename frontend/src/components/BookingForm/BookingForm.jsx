@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import formatDateStr from "date-fns/format";
 
 import NameStep from "./NameStep";
 import WheelsStep from "./WheelsStep";
@@ -46,7 +47,7 @@ const SubmitStep = ({ formData, handleBack, handleSubmitBooking }) => {
             (key, value) => {
               if ((key === "startDate" || key === "endDate") && value) {
                 try {
-                  return new Date(value).toLocaleDateString();
+                  return formatDateStr(new Date(value), "dd-MM-yyyy");
                 } catch (error) {
                   console.error("Error parsing date:", value, error);
                   return value;
